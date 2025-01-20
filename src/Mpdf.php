@@ -206,6 +206,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 	var $watermarkImage;
 	var $showWatermarkText;
 	var $showWatermarkImage;
+	var $hideFooterWatermark;
 
 	var $svgAutoFont;
 	var $svgClasses;
@@ -1064,7 +1065,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 			$mgh,
 			$mgf,
 			$orientation
-		) = $this->initConstructorParams($config);
+			) = $this->initConstructorParams($config);
 
 		$this->logger = new NullLogger();
 
@@ -3176,7 +3177,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 			$this->Reset();
 			$this->pageoutput[$this->page] = [];
 
-			$this->Footer();
+			$this->Footer($this->hideFooterWatermark);
 			// Close page
 			$this->_endpage();
 		}
@@ -3604,7 +3605,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 
 	function GetStringWidth($s, $addSubset = true, $OTLdata = false, $textvar = 0, $includeKashida = false)
 	{
-	// mPDF 5.7.1
+		// mPDF 5.7.1
 		// Get width of a string in the current font
 		$s = (string) $s;
 		$cw = &$this->CurrentFont['cw'];
@@ -4755,7 +4756,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				|| ($this->y + $h > $this->PageBreakTrigger)
 				|| (
 					$this->y + ($h * 2) + $bottom > $this->PageBreakTrigger
-						&& (isset($this->blk[$this->blklvl]['page_break_after_avoid']) && $this->blk[$this->blklvl]['page_break_after_avoid'])
+					&& (isset($this->blk[$this->blklvl]['page_break_after_avoid']) && $this->blk[$this->blklvl]['page_break_after_avoid'])
 				)
 			)
 			&& !$this->InFooter
@@ -6836,7 +6837,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$CJKoverflow = false;
 			}
 			if ((((($contentWidth + $lastitalic) > $maxWidth) && ($content[(count($chunkorder) - 1)] != ' ') ) ||
-				(!$endofblock && $align == 'J' && ($next == 'image' || $next == 'select' || $next == 'input' || $next == 'textarea' || ($next == 'br' && $this->justifyB4br)))) && !($CJKoverflow && $this->allowCJKoverflow)) {
+					(!$endofblock && $align == 'J' && ($next == 'image' || $next == 'select' || $next == 'input' || $next == 'textarea' || ($next == 'br' && $this->justifyB4br)))) && !($CJKoverflow && $this->allowCJKoverflow)) {
 				// WORD SPACING
 				list($jcharspacing, $jws, $jkashida) = $this->GetJspacing($nb_carac, $nb_spaces, ($maxWidth - $lastitalic - $contentWidth - $WidthCorrection - (($this->cMarginL + $this->cMarginR) * Mpdf::SCALE) - ($paddingL + $paddingR + (($fpaddingL + $fpaddingR) * Mpdf::SCALE) )), $inclCursive, $cOTLdata);
 			} /* -- CJK-FONTS -- */ elseif ($this->checkCJK && $align == 'J' && $CJKoverflow && $this->allowCJKoverflow && $this->CJKforceend) {
@@ -7751,7 +7752,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 
 	function WriteFlowingBlock($s, $sOTLdata)
 	{
-	// mPDF 5.7.1
+		// mPDF 5.7.1
 		$currentx = $this->x;
 		$is_table = $this->flowingBlockAttr['is_table'];
 		$table_draft = $this->flowingBlockAttr['table_draft'];
@@ -8046,9 +8047,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 						$CJKoverflow = true; // Set flag
 						continue;
 					} elseif (preg_match("/[" . $this->pregCJKchars . "]/u", $checkchar) && $this->allowCJKorphans &&
-							(preg_match("/[" . $this->CJKleading . "]/u", $followingchar) || preg_match("/[" . $this->CJKfollowing . "]/u", $checkchar)) &&
-							!preg_match("/[" . $this->CJKleading . "]/u", $checkchar) && !preg_match("/[" . $this->CJKfollowing . "]/u", $followingchar) &&
-							!(preg_match("/[0-9\x{ff10}-\x{ff19}]/u", $followingchar) && preg_match("/[0-9\x{ff10}-\x{ff19}]/u", $checkchar))) {
+						(preg_match("/[" . $this->CJKleading . "]/u", $followingchar) || preg_match("/[" . $this->CJKfollowing . "]/u", $checkchar)) &&
+						!preg_match("/[" . $this->CJKleading . "]/u", $checkchar) && !preg_match("/[" . $this->CJKfollowing . "]/u", $followingchar) &&
+						!(preg_match("/[0-9\x{ff10}-\x{ff19}]/u", $followingchar) && preg_match("/[0-9\x{ff10}-\x{ff19}]/u", $checkchar))) {
 						// 1b) Try squeezing another character(s) onto this line = Oikomi, if character cannot end line
 						// or next character cannot start line (and not splitting CJK numerals)
 						// NB otherwise it move lastchar(s) to next line to keep $c company = Oidashi, which is done below in standard way
@@ -11152,8 +11153,8 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 		// If an inline element has a font-size less than the block element, and the line-height is set as an em or % value
 		// it will add too much leading below the font and expand the height of the line - so just use the block element exttop/extbottom:
 		if (preg_match('/mm/', $CSSlineheight)
-				&& ($blockYpos && $ypos['boxtop'] < $blockYpos['boxtop'])
-				&& ($blockYpos && $ypos['boxbottom'] > $blockYpos['boxbottom'])) {
+			&& ($blockYpos && $ypos['boxtop'] < $blockYpos['boxtop'])
+			&& ($blockYpos && $ypos['boxbottom'] > $blockYpos['boxbottom'])) {
 
 			$ypos['exttop'] = $blockYpos['exttop'];
 			$ypos['extbottom'] = $blockYpos['extbottom'];
@@ -12594,7 +12595,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 	// mPDF 6
 	function _shareHeaderFooterWidth($cl, $cc, $cr)
 	{
-	// mPDF 6
+		// mPDF 6
 		$l = mb_strlen($cl, 'UTF-8');
 		$c = mb_strlen($cc, 'UTF-8');
 		$r = mb_strlen($cr, 'UTF-8');
@@ -13132,7 +13133,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 	/* -- END WATERMARK -- */
 
 	// Page footer
-	function Footer()
+	function Footer($hideFooterWatermark = false)
 	{
 		/* -- CSS-PAGE -- */
 		// PAGED MEDIA - CROP / CROSS MARKS from @PAGE
@@ -13233,7 +13234,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 		if (($this->watermarkText) && ($this->showWatermarkText)) {
 			$this->watermark($this->watermarkText, $this->watermarkAngle, is_int($this->watermark_size) ? $this->watermark_size : 120, $this->watermarkTextAlpha); // Watermark text
 		}
-		if (($this->watermarkImage) && ($this->showWatermarkImage)) {
+		if (($this->watermarkImage) && ($this->showWatermarkImage) && !$hideFooterWatermark) {
 			$this->watermarkImg($this->watermarkImage, $this->watermarkImageAlpha); // Watermark image
 		}
 		/* -- END WATERMARK -- */
@@ -15869,7 +15870,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 
 	function _saveTextBuffer($t, $link = '', $intlink = '', $return = false)
 	{
-	// mPDF 6  Lists
+		// mPDF 6  Lists
 		$arr = [];
 		$arr[0] = $t;
 		if (isset($link) && $link) {
@@ -16104,7 +16105,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 		for ($i = 1; $i < $array_size; $i++) {
 			if (isset($arrayaux[$i][16]) && $arrayaux[$i][16] == $lastspanborder &&
 				((!isset($arrayaux[$i][9]['bord-decoration']) && !isset($arrayaux[$i - 1][9]['bord-decoration'])) ||
-				(isset($arrayaux[$i][9]['bord-decoration']) && isset($arrayaux[$i - 1][9]['bord-decoration']) && $arrayaux[$i][9]['bord-decoration'] == $arrayaux[$i - 1][9]['bord-decoration'])
+					(isset($arrayaux[$i][9]['bord-decoration']) && isset($arrayaux[$i - 1][9]['bord-decoration']) && $arrayaux[$i][9]['bord-decoration'] == $arrayaux[$i - 1][9]['bord-decoration'])
 				)
 			) {
 				if (isset($arrayaux[$i][16]['R'])) {
@@ -17418,10 +17419,10 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$shadow .= sprintf('%.3F %.3F %.3F %.3F %.3F %.3F c ', ($p1c2x) * Mpdf::SCALE, ($this->h - ($p1y)) * Mpdf::SCALE, ($p4x) * Mpdf::SCALE, ($this->h - ($p4c2y)) * Mpdf::SCALE, ($p4x) * Mpdf::SCALE, ($this->h - ($p4y)) * Mpdf::SCALE);
 				$patch_array[0]['f'] = 0;
 				$patch_array[0]['points'] = [$p1x, $p1y, $p1x, $p1y,
-					$p2x, $p2c1y, $p2x, $p2y, $p2c2x, $p2y,
-					$p3x, $p3c1y, $p3x, $p3y, $p3c2x, $p3y,
-					$p4x, $p4y, $p4x, $p4y, $p4x, $p4c2y,
-					$p1c2x, $p1y];
+											 $p2x, $p2c1y, $p2x, $p2y, $p2c2x, $p2y,
+											 $p3x, $p3c1y, $p3x, $p3y, $p3c2x, $p3y,
+											 $p4x, $p4y, $p4x, $p4y, $p4x, $p4c2y,
+											 $p1c2x, $p1y];
 				$patch_array[0]['colors'] = [$col1, $col2, $col2, $col1];
 
 
@@ -17447,9 +17448,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$shadow .= sprintf('%.3F %.3F l ', ($p3x ) * Mpdf::SCALE, ($this->h - ($p3y )) * Mpdf::SCALE);
 				$patch_array[1]['f'] = 2;
 				$patch_array[1]['points'] = [$p2x, $p2y,
-					$p3x, $p3y, $p3x, $p3y, $p3x, $p3y,
-					$p4c1x, $p4y, $p4x, $p4y, $p4x, $p4y,
-					$p1x, $p1y];
+											 $p3x, $p3y, $p3x, $p3y, $p3x, $p3y,
+											 $p4c1x, $p4y, $p4x, $p4y, $p4x, $p4y,
+											 $p1x, $p1y];
 				$patch_array[1]['colors'] = [$col1, $col2];
 
 
@@ -17482,9 +17483,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$shadow .= sprintf('%.3F %.3F %.3F %.3F %.3F %.3F c ', ($p1x) * Mpdf::SCALE, ($this->h - ($p1c2y)) * Mpdf::SCALE, ($p4c2x) * Mpdf::SCALE, ($this->h - ($p4y)) * Mpdf::SCALE, ($p4x) * Mpdf::SCALE, ($this->h - ($p4y)) * Mpdf::SCALE);
 				$patch_array[2]['f'] = 2;
 				$patch_array[2]['points'] = [$p2x, $p2c2y,
-					$p3c1x, $p3y, $p3x, $p3y, $p3x, $p3c2y,
-					$p4x, $p4y, $p4x, $p4y, $p4c2x, $p4y,
-					$p1x, $p1c2y];
+											 $p3c1x, $p3y, $p3x, $p3y, $p3x, $p3c2y,
+											 $p4x, $p4y, $p4x, $p4y, $p4c2x, $p4y,
+											 $p1x, $p1c2y];
 				$patch_array[2]['colors'] = [$col2, $col1];
 
 
@@ -17512,9 +17513,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$shadow .= sprintf('%.3F %.3F l ', ($p3x ) * Mpdf::SCALE, ($this->h - ($p3y )) * Mpdf::SCALE);
 				$patch_array[3]['f'] = 2;
 				$patch_array[3]['points'] = [$p2x, $p2y,
-					$p3x, $p3y, $p3x, $p3y, $p3x, $p3y,
-					$p4x, $p4c1y, $p4x, $p4y, $p4x, $p4y,
-					$p1x, $p1y];
+											 $p3x, $p3y, $p3x, $p3y, $p3x, $p3y,
+											 $p4x, $p4c1y, $p4x, $p4y, $p4x, $p4y,
+											 $p1x, $p1y];
 				$patch_array[3]['colors'] = [$col1, $col2];
 
 				// BOTTOM LEFT corner
@@ -17545,9 +17546,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$shadow .= sprintf('%.3F %.3F %.3F %.3F %.3F %.3F c ', ($p1c2x) * Mpdf::SCALE, ($this->h - ($p1y)) * Mpdf::SCALE, ($p4x) * Mpdf::SCALE, ($this->h - ($p4c2y)) * Mpdf::SCALE, ($p4x) * Mpdf::SCALE, ($this->h - ($p4y)) * Mpdf::SCALE);
 				$patch_array[4]['f'] = 2;
 				$patch_array[4]['points'] = [$p2c2x, $p2y,
-					$p3x, $p3c1y, $p3x, $p3y, $p3c2x, $p3y,
-					$p4x, $p4y, $p4x, $p4y, $p4x, $p4c2y,
-					$p1c2x, $p1y];
+											 $p3x, $p3c1y, $p3x, $p3y, $p3c2x, $p3y,
+											 $p4x, $p4y, $p4x, $p4y, $p4x, $p4c2y,
+											 $p1c2x, $p1y];
 				$patch_array[4]['colors'] = [$col2, $col1];
 
 
@@ -17573,9 +17574,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$shadow .= sprintf('%.3F %.3F l ', ($p3x ) * Mpdf::SCALE, ($this->h - ($p3y )) * Mpdf::SCALE);
 				$patch_array[5]['f'] = 2;
 				$patch_array[5]['points'] = [$p2x, $p2y,
-					$p3x, $p3y, $p3x, $p3y, $p3x, $p3y,
-					$p4c1x, $p4y, $p4x, $p4y, $p4x, $p4y,
-					$p1x, $p1y];
+											 $p3x, $p3y, $p3x, $p3y, $p3x, $p3y,
+											 $p4c1x, $p4y, $p4x, $p4y, $p4x, $p4y,
+											 $p1x, $p1y];
 				$patch_array[5]['colors'] = [$col1, $col2];
 
 				// TOP LEFT corner
@@ -17607,9 +17608,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$shadow .= sprintf('%.3F %.3F %.3F %.3F %.3F %.3F c ', ($p1x) * Mpdf::SCALE, ($this->h - ($p1c2y)) * Mpdf::SCALE, ($p4c2x) * Mpdf::SCALE, ($this->h - ($p4y)) * Mpdf::SCALE, ($p4x) * Mpdf::SCALE, ($this->h - ($p4y)) * Mpdf::SCALE);
 				$patch_array[6]['f'] = 2;
 				$patch_array[6]['points'] = [$p2x, $p2c2y,
-					$p3c1x, $p3y, $p3x, $p3y, $p3x, $p3c2y,
-					$p4x, $p4y, $p4x, $p4y, $p4c2x, $p4y,
-					$p1x, $p1c2y];
+											 $p3c1x, $p3y, $p3x, $p3y, $p3x, $p3c2y,
+											 $p4x, $p4y, $p4x, $p4y, $p4c2x, $p4y,
+											 $p1x, $p1c2y];
 				$patch_array[6]['colors'] = [$col2, $col1];
 
 
@@ -17635,9 +17636,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 				$shadow .= sprintf('%.3F %.3F l ', ($p3x ) * Mpdf::SCALE, ($this->h - ($p3y )) * Mpdf::SCALE);
 				$patch_array[7]['f'] = 2;
 				$patch_array[7]['points'] = [$p2x, $p2y,
-					$p3x, $p3y, $p3x, $p3y, $p3x, $p3y,
-					$p4x, $p4c1y, $p4x, $p4y, $p4x, $p4y,
-					$p1x, $p1y];
+											 $p3x, $p3y, $p3x, $p3y, $p3x, $p3y,
+											 $p4x, $p4c1y, $p4x, $p4y, $p4x, $p4y,
+											 $p1x, $p1y];
 				$patch_array[7]['colors'] = [$col1, $col2];
 
 				$shadow .= ' h f Q ' . "\n"; // Close path and Fill the inner solid shadow
@@ -18225,7 +18226,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 
 	function setCSS($arrayaux, $type = '', $tag = '')
 	{
-	// type= INLINE | BLOCK | TABLECELL // tag= BODY
+		// type= INLINE | BLOCK | TABLECELL // tag= BODY
 		if (!is_array($arrayaux)) {
 			return; // Removes PHP Warning
 		}
@@ -19160,7 +19161,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 
 	function TableCheckMinWidth($maxwidth, $forcewrap = 0, $textbuffer = [], $checkletter = false)
 	{
-	// mPDF 6
+		// mPDF 6
 		$acclength = 0; // mPDF 6 (accumulated length across > 1 chunk)
 		$acclongest = 0; // mPDF 6 (accumulated length max across > 1 chunk)
 		$biggestword = 0;
@@ -24049,7 +24050,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 	}
 
 	// ======================================================
-		/* -- INDEX -- */
+	/* -- INDEX -- */
 	// FROM class PDF_Ref == INDEX
 
 	function IndexEntry($txt, $xref = '')
@@ -24167,7 +24168,7 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 		if ($usedivletters) {
 			if ($indexCollationGroup && \in_array(strtolower($indexCollationGroup), array_map(function ($v) {
 					return strtolower(basename($v, '.php'));
-			}, $this->filesInDir(__DIR__ . '/../data/collations/')))) {
+				}, $this->filesInDir(__DIR__ . '/../data/collations/')))) {
 				$collation = require __DIR__ . '/../data/collations/' . $indexCollationGroup . '.php';
 			} else {
 				$collation = [];
@@ -24936,12 +24937,12 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 					// Only process output data
 					$t = $s['s'];
 					if ($t === 'ACROFORM'
-							|| (preg_match('/BT \d+\.\d\d+ (\d+\.\d\d+) Td/', $t))
-							|| (preg_match('/\d+\.\d\d+ (\d+\.\d\d+) \d+\.\d\d+ [\-]{0,1}\d+\.\d\d+ re/', $t))
-							|| (preg_match('/\d+\.\d\d+ (\d+\.\d\d+) l/', $t))
-							|| (preg_match('/q \d+\.\d\d+ 0 0 \d+\.\d\d+ \d+\.\d\d+ (\d+\.\d\d+) cm \/(I|FO)\d+ Do Q/', $t))
-							|| (preg_match('/\d+\.\d\d+ (\d+\.\d\d+) m/', $t))
-							|| (preg_match('/\d+\.\d\d+ (\d+\.\d\d+) \d+\.\d\d+ \d+\.\d\d+ \d+\.\d\d+ \d+\.\d\d+ c/', $t))) {
+						|| (preg_match('/BT \d+\.\d\d+ (\d+\.\d\d+) Td/', $t))
+						|| (preg_match('/\d+\.\d\d+ (\d+\.\d\d+) \d+\.\d\d+ [\-]{0,1}\d+\.\d\d+ re/', $t))
+						|| (preg_match('/\d+\.\d\d+ (\d+\.\d\d+) l/', $t))
+						|| (preg_match('/q \d+\.\d\d+ 0 0 \d+\.\d\d+ \d+\.\d\d+ (\d+\.\d\d+) cm \/(I|FO)\d+ Do Q/', $t))
+						|| (preg_match('/\d+\.\d\d+ (\d+\.\d\d+) m/', $t))
+						|| (preg_match('/\d+\.\d\d+ (\d+\.\d\d+) \d+\.\d\d+ \d+\.\d\d+ \d+\.\d\d+ \d+\.\d\d+ c/', $t))) {
 
 						$clb = $s['y'] + $s['h'];
 
@@ -26233,9 +26234,9 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 		}
 
 		if ((($btype === 'EAN13' || $btype === 'ISBN' || $btype === 'ISSN') && strlen($code) === 12)
-				|| ($btype == 'UPCA' && strlen($code) === 11)
-				|| ($btype == 'UPCE' && strlen($code) === 11)
-				|| ($btype == 'EAN8' && strlen($code) === 7)) {
+			|| ($btype == 'UPCA' && strlen($code) === 11)
+			|| ($btype == 'UPCE' && strlen($code) === 11)
+			|| ($btype == 'EAN8' && strlen($code) === 7)) {
 
 			$code .= $arrcode['checkdigit'];
 
